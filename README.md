@@ -1,6 +1,12 @@
 # trollr
 Pantheon Drupal site blocked IPs comparision and additions
 
+## overview
+- takes a list of known bad actor IPs
+- pulls current list of IPs from Drupal table blocked_ips
+- compares the list and manually adds to the table via terminus drush
+- gathers 200 IP address then adds in a batch for performance
+
 ## requirements
 - terminus (with active session from `terminus auth:login`)
 - drush
