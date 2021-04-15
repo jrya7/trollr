@@ -25,6 +25,12 @@ fileTrolls=`cat trolls.dat`
 # counter for how many got banned
 counterBanned=0
 
+# counter for the loop
+counterLoop=0
+
+# var to hold the 100 ips
+hundoIPs=""
+
 
 ###
 ### functions ###
@@ -87,17 +93,48 @@ case $yn in
 
 		# yes so loop thru list and add to table
 		for banIP in $diffIPs; do
-			# quick echo
-			printf "adding entry for - ${banIP}"
+			# if the counter is 100
+			if [ "$counterLoop" == 100 ]; then
+				# have 100 so reset counter
+				counterLoop=0
 
-			# terminus call
-			terminus drush ${SITENAME}.live -- sql-query 'INSERT IGNORE INTO blocked_ips SET ip = "'$banIP'"' 2>/dev/null
+				# add in the IPs
+				hundoIPs="$hundoIPs , ('$banIP')"
+
+				# quick echo
+				#printf "adding entries for - ${hundoIPs}\n"
+				printf "%s" "adding entries..."
+
+				# terminus call
+				# for adding single entries
+				# echo terminus drush ${SITENAME}.live -- sql-query 'INSERT IGNORE INTO blocked_ips SET ip = "'$hundoIPs'"' &>/dev/null
+				# for adding multiple entries
+				terminus drush ${SITENAME}.live -- sql-query "INSERT IGNORE INTO blocked_ips (ip) VALUES $hundoIPs" &>/dev/null
+
+				# status update
+				printf "added!\n"
+
+				# reset the var to hold the 100 IPs
+				hundoIPs=""
+			# not to 100 IPs yet
+			else
+				# not 100 yet so bump counter 
+				counterLoop=$(( $counterLoop + 1 ))
+
+				# check if there has been an IP added or not
+				if [ -z "${hundoIPs}" ]; then
+					# its blank so just set
+					hundoIPs="('$banIP')"
+
+				# it has an IP in it
+				else
+					# add to end of var
+					hundoIPs="$hundoIPs , ('$banIP')"
+				fi				
+			fi
 
 			# add it to the counter
 			counter=$(( $counter + 1 ))
-
-			# status update
-			printf "added!\n \n"
 		done
 
 		# done with loop so let user konw
