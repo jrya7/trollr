@@ -10,6 +10,7 @@
 # - takes a list of known bad actor IPs
 # - pulls current list of IPs from Drupal table blocked_ips
 # - compares the list and manually adds to the table via terminus drush
+# - gathers 200 IP address then adds in a batch for performance
 #
 
 
@@ -28,7 +29,7 @@ counterBanned=0
 # counter for the loop
 counterLoop=0
 
-# var to hold the 100 ips
+# var to hold the 200 ips
 hundoIPs=""
 
 
@@ -93,16 +94,18 @@ case $yn in
 
 		# yes so loop thru list and add to table
 		for banIP in $diffIPs; do
-			# if the counter is 100
-			if [ "$counterLoop" == 100 ]; then
-				# have 100 so reset counter
+			# if the counter is 200
+			if [ "$counterLoop" == 199 ]; then
+				# add it to the counter
+				counter=$(( $counter + 1 ))
+
+				# have 200 so reset counter
 				counterLoop=0
 
 				# add in the IPs
 				hundoIPs="$hundoIPs , ('$banIP')"
 
 				# quick echo
-				#printf "adding entries for - ${hundoIPs}\n"
 				printf "%s" "adding entries..."
 
 				# terminus call
@@ -112,13 +115,16 @@ case $yn in
 				terminus drush ${SITENAME}.live -- sql-query "INSERT IGNORE INTO blocked_ips (ip) VALUES $hundoIPs" &>/dev/null
 
 				# status update
-				printf "added!\n"
+				printf "success! $counter IPs added\n"
 
-				# reset the var to hold the 100 IPs
+				# reset the var to hold the 200 IPs
 				hundoIPs=""
-			# not to 100 IPs yet
+			# not to 200 IPs yet
 			else
-				# not 100 yet so bump counter 
+				# add it to the counter
+				counter=$(( $counter + 1 ))
+
+				# not 200 yet so bump counter 
 				counterLoop=$(( $counterLoop + 1 ))
 
 				# check if there has been an IP added or not
@@ -132,9 +138,6 @@ case $yn in
 					hundoIPs="$hundoIPs , ('$banIP')"
 				fi				
 			fi
-
-			# add it to the counter
-			counter=$(( $counter + 1 ))
 		done
 
 		# done with loop so let user konw
