@@ -32,6 +32,9 @@ counterLoop=0
 # var to hold the 200 ips
 hundoIPs=""
 
+# var to start the sitename
+SITENAME=""
+
 
 ###
 ### functions ###
@@ -56,17 +59,42 @@ terminus_auth_check() {
 
 
 ###
+### flag handles
+###
+while getopts ":s:" opt; do
+  case $opt in
+    s)
+		# got a flag so set to the variable
+		SITENAME=$OPTARG
+		;;
+    \?)
+		echo "unsupported flag: -$OPTARG" >&2
+		exit 1
+		;;
+    :)
+		echo "flag -$OPTARG requires an argument" >&2
+		exit 1
+		;;
+  esac
+done
+
+
+
+###
 ### main ###
 ###
 # check for logged in user
 terminus_auth_check
 
-# grab the sites
-echo "grabbing site list..."
-terminus site:list --fields="name"
+# check if the sitename has already been set or not
+if [ -z "${SITENAME}" ]; then
+	# grab the sites
+	echo "grabbing site list..."
+	terminus site:list --fields="name"
 
-# set the site to use
-read -p 'type in site name and press [Enter] to start trollr on: ' SITENAME
+	# set the site to use
+	read -p 'type in site name and press [Enter] to start trollr on: ' SITENAME
+fi
 
 # display status message while it gathers IPs from Drupal
 printf "\n"
