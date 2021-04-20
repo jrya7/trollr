@@ -84,84 +84,92 @@ diffIPs=$(comm -23 <(tr ' ' '\n' <<<"$fileTrolls" | sort) <(tr ' ' '\n' <<<"$fil
 # get the number of IPs
 numDiff=`echo -n "$diffIPs" | grep -c '^'`
 
-# display and ask to continue
-read  -p "$numDiff number of new IPs to block, continue? [y/n] " yn
-case $yn in
-	[Yy]* ) 
-		# before looping inform user
-		printf "\n"
-		printf "starting loop, this may take a while depending on the number of additions...\n"
+# check if there are IPs to add
+if [ "$numDiff" != 0 ]; then
+	# display and ask to continue
+	read  -p "$numDiff number of new IPs to block, continue? [y/n] " yn
+	case $yn in
+		[Yy]* ) 
+			# before looping inform user
+			printf "\n"
+			printf "starting loop, this may take a while depending on the number of additions...\n"
 
-		# yes so loop thru list and add to table
-		for banIP in $diffIPs; do
-			# if the counter is 200
-			if [ "$counterLoop" == 199 ]; then
-				# add it to the counter
-				counter=$(( $counter + 1 ))
+			# yes so loop thru list and add to table
+			for banIP in $diffIPs; do
+				# if the counter is 200
+				if [ "$counterLoop" == 199 ]; then
+					# add it to the counter
+					counter=$(( $counter + 1 ))
 
-				# have 200 so reset counter
-				counterLoop=0
+					# have 200 so reset counter
+					counterLoop=0
 
-				# add in the IPs
-				hundoIPs="$hundoIPs , ('$banIP')"
+					# add in the IPs
+					hundoIPs="$hundoIPs , ('$banIP')"
 
-				# quick echo
-				printf "%s" "adding entries..."
+					# quick echo
+					printf "%s" "adding entries..."
 
-				# terminus call
-				# for adding single entries
-				# echo terminus drush ${SITENAME}.live -- sql-query 'INSERT IGNORE INTO blocked_ips SET ip = "'$hundoIPs'"' &>/dev/null
+					# terminus call
+					# for adding single entries
+					# echo terminus drush ${SITENAME}.live -- sql-query 'INSERT IGNORE INTO blocked_ips SET ip = "'$hundoIPs'"' &>/dev/null
+					# for adding multiple entries
+					terminus drush ${SITENAME}.live -- sql-query "INSERT IGNORE INTO blocked_ips (ip) VALUES $hundoIPs" &>/dev/null
+
+					# status update
+					printf "success! $counter IPs added\n"
+
+					# reset the var to hold the 200 IPs
+					hundoIPs=""
+				# not to 200 IPs yet
+				else
+					# add it to the counter
+					counter=$(( $counter + 1 ))
+
+					# not 200 yet so bump counter 
+					counterLoop=$(( $counterLoop + 1 ))
+
+					# check if there has been an IP added or not
+					if [ -z "${hundoIPs}" ]; then
+						# its blank so just set
+						hundoIPs="('$banIP')"
+
+					# it has an IP in it
+					else
+						# add to end of var
+						hundoIPs="$hundoIPs , ('$banIP')"
+					fi				
+				fi
+			done
+
+			# need to check insert incase the counter wasnt reached
+			if (( "$counterLoop" < 199 )); then
+				# quick status message
+				printf "%s" "loop done, inserting the leftovers..."
+
 				# for adding multiple entries
 				terminus drush ${SITENAME}.live -- sql-query "INSERT IGNORE INTO blocked_ips (ip) VALUES $hundoIPs" &>/dev/null
 
 				# status update
-				printf "success! $counter IPs added\n"
-
-				# reset the var to hold the 200 IPs
-				hundoIPs=""
-			# not to 200 IPs yet
-			else
-				# add it to the counter
-				counter=$(( $counter + 1 ))
-
-				# not 200 yet so bump counter 
-				counterLoop=$(( $counterLoop + 1 ))
-
-				# check if there has been an IP added or not
-				if [ -z "${hundoIPs}" ]; then
-					# its blank so just set
-					hundoIPs="('$banIP')"
-
-				# it has an IP in it
-				else
-					# add to end of var
-					hundoIPs="$hundoIPs , ('$banIP')"
-				fi				
+				printf "success!\n\n"
 			fi
-		done
-
-		# need to check insert incase the counter wasnt reached
-		if (( "$counterLoop" < 199 )); then
-			# quick status message
-			printf "%s" "loop done, inserting the leftovers..."
-
-			# for adding multiple entries
-			terminus drush ${SITENAME}.live -- sql-query "INSERT IGNORE INTO blocked_ips (ip) VALUES $hundoIPs" &>/dev/null
-
-			# status update
-			printf "success!\n\n"
-		fi
 
 
-		# done with loop so let user konw
-		echo "$counter IPs were added to blocked_ips table"
-		echo "done and exiting..."
-		exit 0;;
-	[Nn]* ) 
-		# no so exit script
-		echo "exiting script..."
-		exit 0;;
-esac
+			# done with loop so let user konw
+			echo "$counter IPs were added to blocked_ips table"
+			echo "done and exiting..."
+			exit 0;;
+		[Nn]* ) 
+			# no so exit script
+			echo "exiting script..."
+			exit 0;;
+	esac
+# no ips to add
+else
+	# no so exit script
+	echo "no IPs to add, exiting script..."
+	exit 0
+fi
 
 
 # exit just in case
