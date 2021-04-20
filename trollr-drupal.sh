@@ -45,7 +45,7 @@ terminus_auth_check() {
 	# check the result
 	# not logged in so let the user know
 	if [ "$response" == "" ]; then
-		echo "you are not authenticated with terminus, please login and re-run the script"
+		echo "you are not authenticated with terminus, please login with terminus auth:login and re-run the script"
 		exit 0
 	# user login found so make sure its correct user
 	else
@@ -139,6 +139,19 @@ case $yn in
 				fi				
 			fi
 		done
+
+		# need to check insert incase the counter wasnt reached
+		if (( "$counterLoop" < 199 )); then
+			# quick status message
+			printf "%s" "loop done, inserting the leftovers..."
+
+			# for adding multiple entries
+			terminus drush ${SITENAME}.live -- sql-query "INSERT IGNORE INTO blocked_ips (ip) VALUES $hundoIPs" &>/dev/null
+
+			# status update
+			printf "success!\n\n"
+		fi
+
 
 		# done with loop so let user konw
 		echo "$counter IPs were added to blocked_ips table"
