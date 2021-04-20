@@ -19,4 +19,7 @@ Pantheon Drupal site blocked IPs comparision and additions
   - `chmod 775 trollr-drupal.sh`
 - Run the script
   - `./trollr-drupal.sh`
-- Follow the prompt options to enter which site you'd like to run it on
+  - Then follow the prompt options to enter which site you'd like to run it on
+- Or run the script by passing the sitename with the -s flag
+  - `./trollr-drupal.sh -s SITENAME`
+  - The follow the prompt options to compete the script
