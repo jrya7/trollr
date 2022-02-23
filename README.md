@@ -11,7 +11,7 @@ Pantheon Drupal site blocked IPs comparision and additions
 - terminus (with active session from `terminus auth:login`)
 - drush
 - drupal 7 
-  - the ban functionality is part of the System module 
+  - the ban functionality is part of the system module 
 - drupal 8+
   - requires the ban module to be enabled
 
